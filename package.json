@@ -1,0 +1,57 @@
+{
+  "name": "dsh-siliconflow-image",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "为 DSH 增加 SiliconFlow 生图模型：模型选择器里的 SiliconFlow 生图 provider（Kolors / Qwen-Image / Z-Image / MOSS-Image / Qwen-Image-Edit），任意模型可调用的 generate_image 工具，以及和 playground 一致的参数面板（图片尺寸 / 推理步数 / 种子 / 负面提示词）。",
+  "author": "nanaka",
+  "license": "MIT",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./src/api": "./src/api.js",
+    "./src/adapter": "./src/adapter.js",
+    "./src/admin": "./src/admin.js",
+    "./src/catalog": "./src/catalog.js",
+    "./src/params": "./src/params.js",
+    "./src/projection": "./src/projection.js",
+    "./src/tool": "./src/tool.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "src",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "siliconflow",
+    "image-generation",
+    "text-to-image",
+    "image-model"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-model-selection"
+      ]
+    }
+  }
+}

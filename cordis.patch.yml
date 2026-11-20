@@ -1,0 +1,36 @@
+# dsh-siliconflow-image bundle patch.
+#
+# One insert line mounts the Host half. The browser half (`client.js`) rides the
+# same Loader row: dsh-client-modules reads `dsh.client` from this package's
+# manifest and serves it to the web shell.
+- insert:
+    - id: siliconflow-image
+      name: 'dsh-siliconflow-image'
+      config:
+        # Credential reference resolved through the harness credential store,
+        # then the environment. Set it under Models settings or export it.
+        apiKeyRef: SILICONFLOW_API_KEY
+        # SiliconFlow base URL (OpenAI-compatible).
+        baseURL: https://api.siliconflow.cn/v1
+        # Model used by generate_image when the call names none.
+        defaultModel: OpenMOSS-Team/MOSS-Image
+        # Where generate_image writes files (relative to the session workspace).
+        outputDir: generated-images
+        # false = pass X-Enable-Watermark: 0 (clean image); true = keep the
+        # visible "AI generated" watermark.
+        watermark: false
+        # Generation + download budget, milliseconds. The provider can queue a
+        # request for well over five minutes before it starts drawing, so this is
+        # generous on purpose: a queued generation that gets cut off wastes the
+        # whole call, while a genuinely dead request still ends here. Keep it
+        # BELOW the upstream stream idle timeout (see llm-pi-ai below), or the
+        # harness watchdog fires first and config.timeoutMs cannot be reached.
+        timeoutMs: 600000
+        # Provider name shown in the model picker.
+        providerName: SiliconFlow 生图
+        # Composer panel with the playground's four fields
+        # (image_size / num_inference_steps / seed / negative_prompt).
+        parameterPanel: true
+        # Per-session parameter persistence (resolved beside this package when
+        # relative). Delete the file to reset every session at once.
+        paramsFile: .siliconflow-image-params.json

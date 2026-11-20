@@ -1,0 +1,3 @@
+# Per-session panel parameters: runtime state, not source.
+.siliconflow-image-params.json
+scripts/restart.log
