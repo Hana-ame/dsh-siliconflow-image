@@ -37,11 +37,18 @@ export const DENY_GLOBAL = [
   'browser_open', 'browser_navigate', 'browser_click', 'browser_type',
   'browser_select', 'browser_screenshot', 'browser_eval', 'browser_get_html',
   'browser_get_text', 'browser_wait', 'browser_close', 'browser_install',
-  // Main-session review injection (Host plane).
-  'inject_context_read', 'inject_deliver', 'inject_user_inputs',
   // General-purpose web tools; the image preset is image-only.
   'web_fetch', 'web_search',
 ]
+
+// NOTE: `inject_context_read` / `inject_deliver` / `inject_user_inputs` are NOT
+// in this list. They are scope-only tools (registered by the review injection
+// plugin into specific agent scopes), NOT Host-global tools. Passing them to
+// `tools.restrict()` throws "names unknown global tools" — verified against the
+// live registry, whose global set is only: browser_*, generate_image,
+// web_fetch, web_search. Keeping them out avoids a spurious restrict error.
+// (dsh-peer-message/tool.js still lists them and logs that error on every
+// activation; this plugin does not repeat it.)
 
 /**
  * @param {object} ctx - preset scope context (inject: ['tools']).

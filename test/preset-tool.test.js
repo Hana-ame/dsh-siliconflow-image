@@ -77,7 +77,11 @@ test('denies the inherited global tools so the scope stays image-only', () => {
   assert.ok(Array.isArray(restricted?.deny))
   assert.ok(restricted.deny.includes('browser_click'))
   assert.ok(restricted.deny.includes('web_search'))
-  assert.ok(restricted.deny.includes('inject_deliver'))
+  // inject_* are scope-only tools, NOT Host-global; denying them throws
+  // "names unknown global tools" on every activation, so they must stay out.
+  assert.ok(!restricted.deny.includes('inject_deliver'))
+  assert.ok(!restricted.deny.includes('inject_context_read'))
+  assert.ok(!restricted.deny.includes('inject_user_inputs'))
   // Never deny this scope's own registration.
   assert.ok(!restricted.deny.includes('generate_image'))
   assert.equal(restricted.deny.length, DENY_GLOBAL.length)
