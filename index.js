@@ -54,6 +54,25 @@ const DEFAULTS = {
   parameterPanel: true,
   /** Where the panel's per-session parameters persist; relative paths resolve beside this package. */
   paramsFile: '.siliconflow-image-params.json',
+  /**
+   * Register `generate_image` in the Host-global tool registry. @default true
+   *
+   * `true`: every agent (any preset) can call `generate_image`.
+   * `false`: the tool is NOT registered globally; it is mounted by
+   * `preset-image` (declared in `cordis.patch.yml`) via `preset-tool.js`.
+   */
+  toolGlobal: true,
+  /**
+   * Register the SiliconFlow image provider route so its models appear as
+   * selectable entries in the model picker. @default true
+   *
+   * `true`: every image model in the catalog is selectable and answering with
+   * one produces an assistant image message.
+   * `false`: the route (and therefore the selectable models and the composer
+   * parameter panel) is NOT registered; SiliconFlow images are reachable only
+   * through the `generate_image` tool, never by picking a model.
+   */
+  providerRoute: true,
 }
 
 /**
@@ -78,6 +97,12 @@ function normalizeConfig(config) {
   }
   if (typeof effective.outputDir !== 'string' || effective.outputDir.length === 0) {
     throw new Error('siliconflow-image: config.outputDir must be a non-empty path')
+  }
+  if (effective.toolGlobal !== undefined && typeof effective.toolGlobal !== 'boolean') {
+    throw new Error('siliconflow-image: config.toolGlobal must be a boolean')
+  }
+  if (effective.providerRoute !== undefined && typeof effective.providerRoute !== 'boolean') {
+    throw new Error('siliconflow-image: config.providerRoute must be a boolean')
   }
   return effective
 }
@@ -115,8 +140,12 @@ export function apply(ctx, config) {
   const adapter = new SiliconFlowImageAdapter({ ctx, config: effective, models, paramStore })
 
   try {
-    ctx.llm.registerAdapter([ROUTE], adapter)
-    ctx.logger?.info?.(`siliconflow-image: provider route "${ROUTE}" registered with ${models.length} image models`)
+    if (effective.providerRoute !== false) {
+      ctx.llm.registerAdapter([ROUTE], adapter)
+      ctx.logger?.info?.(`siliconflow-image: provider route "${ROUTE}" registered with ${models.length} image models`)
+    } else {
+      ctx.logger?.info?.('siliconflow-image: provider route skipped (providerRoute=false; models reachable only via generate_image)')
+    }
   } catch (error) {
     // A duplicate route or a failed registration must not take the tool down.
     warn(`could not register provider route "${ROUTE}": ${error?.message ?? error}`)
@@ -132,8 +161,12 @@ export function apply(ctx, config) {
   }
 
   try {
-    ctx.tools.register(createGenerateImageTool({ ctx, config: effective, paramStore }))
-    ctx.logger?.info?.('siliconflow-image: tool "generate_image" registered')
+    if (effective.toolGlobal !== false) {
+      ctx.tools.register(createGenerateImageTool({ ctx, config: effective, paramStore }))
+      ctx.logger?.info?.('siliconflow-image: tool "generate_image" registered (global)')
+    } else {
+      ctx.logger?.info?.('siliconflow-image: tool "generate_image" skipped (toolGlobal=false; mounted by preset-image)')
+    }
   } catch (error) {
     warn(`could not register tool "generate_image": ${error?.message ?? error}`)
   }
@@ -141,6 +174,9 @@ export function apply(ctx, config) {
   // The composer panel needs an HTTP seam: the browser cannot write Host
   // config, so it stores its four fields through this loopback route. A
   // headless composition simply has no `webServer` and stays route-free.
+  // NOTE: the panel is independent of providerRoute — its fields are read by
+  // generate_image too (via usableParams), so it stays useful for the tool
+  // even when no image model is selectable.
   if (effective.parameterPanel !== false) {
     try {
       const handler = createParamsAdmin({ models, defaultModel: effective.defaultModel, paramStore, warn })

@@ -10,6 +10,7 @@
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
+    "./preset-tool": "./preset-tool.js",
     "./src/api": "./src/api.js",
     "./src/adapter": "./src/adapter.js",
     "./src/admin": "./src/admin.js",
@@ -22,6 +23,7 @@
   "files": [
     "index.js",
     "client.js",
+    "preset-tool.js",
     "src",
     "cordis.patch.yml",
     "README.md"

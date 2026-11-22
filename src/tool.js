@@ -200,7 +200,7 @@ export function createGenerateImageTool({ ctx, config, paramStore }) {
       if (exec.signal?.aborted) throw exec.signal.reason
 
       const apiKey = await resolveApiKey(ctx, config)
-      const attachments = ctx.get('attachments')
+      const attachments = typeof ctx.get === 'function' ? ctx.get('attachments') : undefined
       const references = Array.isArray(args.reference_images)
         ? args.reference_images.filter((url) => typeof url === 'string' && url.trim().length > 0)
         : []

@@ -34,3 +34,51 @@
         # Per-session parameter persistence (resolved beside this package when
         # relative). Delete the file to reset every session at once.
         paramsFile: .siliconflow-image-params.json
+        # Do NOT register generate_image in the Host-global tool registry. The
+        # tool is mounted by preset-image (below) via ./preset-tool, so only
+        # sessions on that preset can call it. Provider route, assistant-image
+        # projection, and the parameter-panel admin stay global here.
+        toolGlobal: false
+        # Do NOT register the SiliconFlow image provider route either, so no
+        # SiliconFlow image model appears as a selectable entry in the model
+        # picker. SiliconFlow images are reachable ONLY through generate_image
+        # (preset-image above) — never by picking a model in the composer.
+        # The assistant-image projection and the parameter panel stay on: the
+        # panel's fields are read by generate_image too.
+        providerRoute: false
+
+# ── preset-image：只有选这个预设的会话拿到 generate_image ────────────────────
+# 与 preset-peer（dsh-peer-message）同一模式：preset 声明 + preset-scope 工具行。
+# `image-tool` 用包名 `dsh-siliconflow-image/preset-tool` 引用本包子路径导出，
+# 不写死绝对路径（见 peer-message 的 cordis.patch.yml 注释）。
+# preset-tool 行需要携带工具工厂依赖的同一份图片配置（apiKeyRef / baseURL /
+# defaultModel / outputDir / watermark / timeoutMs），与 bundle 行保持一致。
+- insert:
+    - id: preset-image
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: image
+        name: Image
+        description: 只暴露 SiliconFlow 生图工具 generate_image 的专用预设。
+        order: 10
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是一个专注生图的 Agent，通过 generate_image 工具调用 SiliconFlow 的生图模型（Kolors / Qwen-Image / Z-Image / MOSS-Image / Qwen-Image-Edit）出图。
+                每次生成后，把图片以 ![描述](绝对路径) 的形式内联放进回复里；只报路径的回复是不完整的。
+                用户没指定模型时用默认模型；用户要改图时确认当前消息带了 1–3 张参考图。
+              suffix: Your working directory is {{cwd}}.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config: { maxBytes: 65536 }
+          - id: image-tool
+            name: 'dsh-siliconflow-image/preset-tool'
+            config:
+              apiKeyRef: SILICONFLOW_API_KEY
+              baseURL: https://api.siliconflow.cn/v1
+              defaultModel: OpenMOSS-Team/MOSS-Image
+              outputDir: generated-images
+              watermark: false
+              timeoutMs: 600000
